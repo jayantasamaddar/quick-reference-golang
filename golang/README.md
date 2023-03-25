@@ -3,9 +3,14 @@
 - [Table of Contents](#table-of-contents)
 - [The History of Go](#the-history-of-go)
 - [Go - The Programming Language](#go---the-programming-language)
-- [Setup and Installation](#setup-and-installation)
-- [Workspace](#workspace)
-- [Modules](#modules)
+- [Getting Started with Go](#getting-started-with-go)
+  - [Installation](#installation)
+  - [Workspace](#workspace)
+  - [Modules](#modules)
+    - [Single Module Workspace](#single-module-workspace)
+    - [Multi-Module Workspace](#multi-module-workspace)
+    - [Multi-Module Workspace: Basic Setup](#multi-module-workspace-basic-setup)
+    - [Multi-Module Workspace: Dependent Modules](#multi-module-workspace-dependent-modules)
 - [Running Go Applications](#running-go-applications)
   - [Running your first Go Application](#running-your-first-go-application)
   - [Live Reloading Go Applications](#live-reloading-go-applications)
@@ -108,6 +113,15 @@
   - [Channels: Buffered Channels](#channels-buffered-channels)
   - [Channels: `for...range` loops with channels](#channels-forrange-loops-with-channels)
   - [Channels: Select Statements](#channels-select-statements)
+- [Generics](#generics)
+  - [Generics: Overview](#generics-overview)
+  - [Generics: Using Interfaces](#generics-using-interfaces)
+  - [Generics: Using `constraints.Ordered`](#generics-using-constraintsordered)
+  - [Generics: Working with Type Aliases](#generics-working-with-type-aliases)
+  - [Generics: Example: Creating a mapping function](#generics-example-creating-a-mapping-function)
+  - [Generics: Working with Structs](#generics-working-with-structs)
+  - [Generics: Working with Maps](#generics-working-with-maps)
+- [References](#references)
 
 ---
 
@@ -147,7 +161,9 @@ Strongly typed means, the type of a variable cannot change over time. Statically
 
 ---
 
-# Setup and Installation
+# Getting Started with Go
+
+## Installation
 
 1. **Installation**:
 
@@ -160,13 +176,7 @@ Strongly typed means, the type of a variable cannot change over time. Statically
 
    **Option 2**: Download a Go binary release from the [Downloads Page](https://go.dev/dl/)
 
-2. **Ensure the `GO111MODULE` environment variable is set to `"auto"`**.
-
-   ```s
-   go env -w GO111MODULE=auto
-   ```
-
-3. **Download VS Code Extension**: Download the Go Extension maintained by the Go Team at Google to add language support for IDE intellisense and auto-completion.
+2. **Download VS Code Extension**: Download the Go Extension maintained by the Go Team at Google to add language support for IDE intellisense and auto-completion.
 
    Launch VS Code Quick Open (`Ctrl + P`), paste the following command, and press `enter`.
 
@@ -174,20 +184,40 @@ Strongly typed means, the type of a variable cannot change over time. Statically
    ext install golang.Go
    ```
 
-4. **Download the additional packages required by the extension**: To make the extension function properly there are some additional packages that must be downloaded.
+3. **Download the additional packages required by the extension**: To make the extension function properly there are some additional packages that must be downloaded.
 
    ```s
+   # go-outline is an utility to extract JSON representation of declarations from a Go source file
+   # gopls is the official Language Server for Go
+   # go-delve is a debugger for Go
+   # staticcheck offers extensive analysis of Go code, detecting bugs, dead code, pointing suggestions
    go install -v github.com/ramya-rao-a/go-outline@latest
    go install -v golang.org/x/tools/gopls@latest
    go install github.com/go-delve/delve/cmd/dlv@latest
    go install honnef.co/go/tools/cmd/staticcheck@latest
    ```
 
+4. Edit `settings.json` in VS Code and add the following:
+
+   ```json
+   "[go]": {
+   	"editor.defaultFormatter": "golang.go",
+   	"editor.formatOnSave": true
+   },
+   "go.useLanguageServer": true,
+   "go.languageServerFlags": ["-rpc.trace"],
+   "gopls": {
+   	"verboseOutput": true
+   }
+   ```
+
+   This sets up debugging options and uses the `gopls` Language Server. This will fetch imports automatically if they are not imported and add other formatting.
+
 ---
 
-# Workspace
+## Workspace
 
-It is preferred to create a workspace inside a src folder that looks like this:
+If you're using Go prior to `Go 1.11`, it was preferred to create a workspace inside a `src` folder inside the `GOPATH`. The `GOPATH` is the path where Go installs packages, binaries and reads source code from. The basic structure looks like this:
 
 ```bash
 ├── bin
@@ -200,15 +230,145 @@ It is preferred to create a workspace inside a src folder that looks like this:
                 └── Main.go
 ```
 
+So any project you create should go inside the `src` folder.
+
+But ever since Go modules came out, this way of following the `GOPATH` structure is no more applicable when using Go modules and is the current defacto way of working with Go. However, it is still important to know the significance of the structure of the `GOPATH` and how Go stores installable binaries and packages.
+
+Just remember, whenever you run `go install`, by default, it will store in the `$GOPATH/bin` directory.
+
 ---
 
-# Modules
+## Modules
 
-The naming convention when declaring a module is to name it according to the repository from which it would be downloaded. For e.g. you can initialize a module by typing the following:
+### Single Module Workspace
+
+A module can be considered as a single project which can generate a binary of its own.
+
+Go understands a project is a module when we add the `go.mod` file.
+We can initialize a module by typing the following to create a `go.mod` file:
 
 ```bash
-go mod init github.com/[github-username]/[repository]
+go mod init github.com/[github-username]/[publicrepository]
 ```
+
+A basic `go.mod` file looks like this without dependencies.
+
+```go
+module "github.com/jayantasamaddar/publicrepository"
+
+go 1.20
+```
+
+As you add dependencies in your projects, you may run:
+
+```bash
+# Run this when you import an external package in any of the files in the module that hasn't been imported to auto-import them into your project.
+go mod tidy
+```
+
+The `go.mod` file will be updated to require those dependencies like:
+
+```go
+module github.com/jayantasamaddar/quick-reference-golang/cli-reminder
+
+go 1.20
+
+require (
+	github.com/gen2brain/beeep v0.0.0-20230307103607-6e717729cb4f
+	github.com/olebedev/when v0.0.0-20221205223600-4d190b02b8d8
+)
+```
+
+The `go.sum` will be created tracking all the dependencies versions with checksum.
+
+**Rules and Conventions**:
+
+- The naming convention when declaring a module is to name it according to the repository from which it would be downloaded.
+- A directory containing a module needs to have a file with a `main` function that is run as the entrypoint to the module.
+- An `init` function(s) if it exists (there can be more than one), runs once prior to the `main` function. If there are more than one `init` functions located in separate files, they are run in an alphabetical order. This isn't ideal and should be avoided. If you provide an `init` function, provide only one.
+
+---
+
+### Multi-Module Workspace
+
+### Multi-Module Workspace: Basic Setup
+
+A multi-module workspace can be seen very similar to a Monorepo where there are many Go modules inside a single Directory or Workspace. This repository `quick-reference-golang` is an example of a Multi-Module Workspace.
+
+It is characterized by Directories which are modules. For example the `basic-CRUD-api`, `cli-reminder` are modules of the `quick-reference-golang` workspace. These modules are setup exactly as described in the [Single-Module Workspace](#single-module-workspace) section.
+
+The only thing to add now is a `go.work` file that includes those modules in this root directory.
+
+```go
+go 1.20
+
+use (
+    ./basic-CRUD-api
+    ./cli-reminder
+)
+```
+
+This can also be initialized with the `go work` command.
+
+> **Note**: The modules must be created first, i.e. they must contain a `go.mod` file inside each of them, before you add them to the `go.work`
+
+**Relevant Commands**:
+
+- `go work init [modulePath]`: Initialize workspace file with a module.
+- `go work use [modulePath]`: Add another module to the workspace.
+
+```go
+go work init ./basic-CRUD-api
+go work use ./cli-reminder
+```
+
+Now the modules are properly synced with the workspace.
+
+---
+
+### Multi-Module Workspace: Dependent Modules
+
+The whole point of a Multi-Module workspace is that modules should be able to depend on each other without fetching them from external repositories.
+
+**Situation**: You have a workspace, with three modules:
+
+- `moduleA`
+- `moduleB`
+- `moduleC`
+
+`moduleB` has no dependencies while `moduleA` and `moduleC` both depend on `moduleB`.
+
+We don't want our import statement to look on the internet or try to fetch from a repository `moduleB`. Afterall, that is why we are in a Multi-Module setup. That is especially true, when we have just created a new multi-module workspace and `moduleB` doesn't even exist in any repository because there has been no commits pushed. On top of that, any new changes to `moduleB` may not exist in that external repository yet, hence we will be accessing stale code and that may cause bugs in `moduleA` and `moduleC`.
+
+To fix this, we need to simply replace the `moduleB` with the path to moduleB in the workspace in each of the `go.mod` file of `moduleA` and `moduleC`.
+
+To do this,
+
+1. `cd` into the `moduleA` directory.
+2. **Run**:
+
+   ```bash
+   go mod edit -replace github.com/user/moduleB=../moduleB
+   ```
+
+   This will modify the `go.mod` file to have a `replace` statement added, to look something like:
+
+   ```go
+   module github.com/user/moduleA
+
+   go 1.20
+
+   require (
+   	// ...other dependencies
+   	github.com/user/moduleB v0.0.0-00010101000000-000000000000
+   )
+
+   replace github.com/user/moduleB => ../moduleB
+   ```
+
+3. Repeat the above for `moduleC`.
+
+Now, we are correctly setup in a Multi-Module Workspace that have inter-dependent modules.
 
 ---
 
@@ -3353,3 +3513,317 @@ LOOP:
 > **Note**: If you have a default case in the select statement, it no longer becomes a blocking select statement. What that does is, if there's a message ready on one of the channels that are being monitored, then it's going to execute that code path. If not, it will execute the default one. This is useful when you want to have a non-blocking select statement. The absence of the default case means, the select statement will block forever until a message does come in or the exit case (if any) is met.
 
 ---
+
+# Generics
+
+## Generics: Overview
+
+Go 1.18 includes an implementation of generic features as described by the [Type Parameters](https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md) Proposal.
+
+Generics allows you to write your code in a way where you don't have to repeat the same code.
+
+With generics, you can declare and use `functions` or `types` that are written to work with any of a set of types provided by calling code.
+
+Let's take a function that adds two numbers:
+
+```go
+package main
+
+import "fmt"
+
+func Add(a, b int) int {
+	return a + b
+}
+
+func main() {
+	result := Add(1, 2)
+	fmt.Println("Result:", result)
+}
+```
+
+This works fine as expected, however the problem is, we cannot pass anything except integers, particularly `int32` integers. What if we want to pass floating point numbers or very large integers `int64` or `int128`?
+
+We cannot do that in the current scenario as it will throw an error if we try it.
+
+We may want to create a new `AddFloat` function or an `AddInt64` function and then detect then use those functions whenever we have to deal with those specific types. But you can see how we are repeating code here as the underlying operation is still an addition of `a + b`. This is where Generics can be helpful.
+
+With Generics the code can now be modified to look like this:
+
+```go
+package main
+
+import "fmt"
+
+func Add[T int | float64 ](a, b T) T {
+	return a + b
+}
+
+func main() {
+	fmt.Println("Result:", Add(1, 2))				// Result: 3
+	fmt.Println("Result:", Add(1.1, 2.))			// Result: 3.1
+}
+```
+
+This works and now we have the same function handling both int and float64 addition of two numbers.
+
+However, there are many different kinds of integer types and floats. How do we deal with that? The answer is: Using interfaces
+
+---
+
+## Generics: Using Interfaces
+
+There are many different kinds of integer types and floats. We can add them in the function declaration like below:
+
+```go
+func Add[T int8 | int16 | int | int64 | float32 | float64 ](a, b T) T {
+	return a + b
+}
+```
+
+However, there are two shortcomings to the above approach:
+
+- It's very verbose to write this.
+- The whole idea is to not repeat and promote reusability of code. So if we need to create another Subtract function, we have to again repeat declaring all the number types like above.
+
+There's a better way to do this and that is using Interfaces to declare the type:
+
+```go
+type Number interface {
+	int8 | int16 | int | int64 | float32 | float64
+}
+
+func Add[T Number](a, b T) T {
+	return a + b
+}
+
+func Subtract[T Number](a, b T) T {
+	return a - b
+}
+```
+
+---
+
+## Generics: Using `constraints.Ordered`
+
+Although we have reusability in the above situation, it may still be a little verbose.
+
+Simplification being one of the principles of the language, we need to import a package to simplify this even further.
+
+The `constraints` package comes with an Interface `Ordered` accessible via `constraints.Ordered` that is the union of all the number types and string (for string concatenation)
+
+```go
+package main
+
+import (
+	"fmt"
+	"golang.org/x/exp/constraints"
+)
+
+func Add[T constraints.Ordered](a, b T) T {
+	return a + b
+}
+
+func main() {
+	fmt.Println("Result:", Add(1, 2))				// Result: 3
+	fmt.Println("Result:", Add(1.1, 2.))			// Result: 3.1
+}
+```
+
+---
+
+## Generics: Working with Type Aliases
+
+Let's say we had a Type Alias declared and we want to use that in the function. We run that and we get an error that says the Type Alias doesn't satisfy the types. This is because the underlying type is not considered and the Type Alias is by default considered it's own type.
+
+```go
+package main
+
+import "fmt"
+
+type Amount int
+
+func Add[T int | float64 ](a, b T) T {
+	return a + b
+}
+
+func main() {
+	fmt.Println("Result:", Add(Amount(1), Amount(2)))	// Amount does not satisfy int | float64 (possibly missing ~ for int in int | float64)
+}
+```
+
+As you can see Go already provides an underlying suggestion to use the `~` character.
+
+The tilde (`~`) character specifies an approximation constraint `~T` that can be fulfilled by types that use `T` as an underlying type.
+
+Hence, we can now run the following successfully:
+
+```go
+package main
+
+import "fmt"
+
+type Amount int
+
+func Add[T ~int | float64](a, b T) T {
+	return a + b
+}
+
+func main() {
+	fmt.Println("Result:", Add(Amount(1), Amount(2))) // Result: 3
+}
+```
+
+---
+
+## Generics: Example: Creating a mapping function
+
+A mapping function as seen in many programming languages, iterates over a list and returns a new list with the elements mutated by a function. We want to use Generics to create a mapping function that can work across all number types.
+
+First let's try to write the normal map function:
+
+```go
+package main
+
+import "fmt"
+
+func Map(array []int, callback func(index, value int) int) []int {
+	var newArray []int
+	for index, value := range array {
+		newArray = append(newArray, callback(index, value))
+	}
+	return newArray
+}
+
+func main() {
+	var intArray = []int{1, 2, 3}
+	result := Map(intArray, func(i, n int) int {
+		return n * 2
+	})
+	fmt.Println(result)
+}
+```
+
+Now, let's convert this into using Generics, so we can pass in any number type:
+
+```go
+package main
+
+import "fmt"
+
+type Signed interface {
+	~int8 | ~int16 | ~int | ~int32 | ~int64
+}
+
+type Unsigned interface {
+	~uint8 | ~uint16 | ~uint | ~uint32 | ~uint64
+}
+
+type Float interface {
+	~float32 | ~float64
+}
+
+type Number interface {
+	Signed | Unsigned | Float
+}
+
+// Note: instead of the Number interface, we could use the `constraints.Ordered` interface
+
+func Map[T Number](array []T, callback func(index int, value T) T) []T {
+	var newArray []T
+	for index, value := range array {
+		newArray = append(newArray, callback(index, value))
+	}
+	return newArray
+}
+
+func main() {
+	resultInt := Map([]int{1, 2, 3}, func(i, n int) int {
+		return n * 2
+	})
+	resultFloat := Map([]float32{1.1, 2.2, 3.3}, func(i int, n float32) float32 {
+		return n * 2
+	})
+	fmt.Println(resultInt)   // [2, 4, 6]
+	fmt.Println(resultFloat) // [2.2, 4.4, 6.6]
+}
+```
+
+---
+
+## Generics: Working with Structs
+
+Let's say we are working with a User struct, that has one of the fields as an arbitrary Data type which we do not know for sure. We might be inclined to use `interface {}` as follows:
+
+```go
+package main
+
+import "fmt"
+
+type User struct {
+	ID int
+	Name string
+	Data interface {}
+}
+```
+
+This is a bad idea as then the interface needs to be cast into the type we want it to be and the compiler can't help you.
+
+Instead we can do the following:
+
+```go
+package main
+
+import (
+	"fmt"
+	"golang.org/x/exp/constraints"
+)
+
+type CustomData interface {
+	constraints.Ordered | []byte | []rune
+}
+
+type User[T CustomData] struct {
+	ID int
+	Name string
+	Data T
+}
+
+func main() {
+	u := User[string] {
+		ID: 123456,
+		Name: "John Doe",
+		Data: "Any CustomData type"
+	}
+	fmt.Println(u)	// {123456 John Doe Any CustomData type}
+}
+```
+
+Thus we can see using Generics with structs can give us an extra layer of flexibility in our data types, without sacrificing safety.
+
+---
+
+## Generics: Working with Maps
+
+The valid data types for the key of a Map in Go, is the type `comparable`. A `comparable` type is a umbrella for any type where you can compare one value to the other.
+
+```go
+package main
+
+import "fmt"
+
+type CustomMap[T comparable, V int | string] map[T]V
+
+func main() {
+	user := make(CustomMap[string, int])
+	user["id"] = 123456
+	fmt.Println(user)				// map[id:123456]
+}
+```
+
+---
+
+# References
+
+- [Golang Tutorial - Freecodecamp]()
+- [Effective Go](https://go.dev/doc/effective_go)
+- [Go 1.18 : Generics in Go](https://www.youtube.com/watch?v=WpTKqnfp5dY)
