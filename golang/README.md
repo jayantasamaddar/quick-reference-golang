@@ -91,6 +91,7 @@
   - [Functions: Anonymous Functions](#functions-anonymous-functions)
   - [Functions: Functions as Types](#functions-functions-as-types)
   - [Functions: Methods](#functions-methods)
+  - [Functions: `String()` method for a Custom Type](#functions-string-method-for-a-custom-type)
 - [Interfaces](#interfaces)
   - [Interfaces: Basics](#interfaces-basics)
   - [Interfaces: Composing Interfaces](#interfaces-composing-interfaces)
@@ -121,6 +122,17 @@
   - [Generics: Example: Creating a mapping function](#generics-example-creating-a-mapping-function)
   - [Generics: Working with Structs](#generics-working-with-structs)
   - [Generics: Working with Maps](#generics-working-with-maps)
+- [Directives](#directives)
+  - [`go:embed`](#goembed)
+- [Standard Library](#standard-library)
+  - [`fmt`](#fmt)
+  - [`log`](#log)
+  - [`strings`](#strings-1)
+  - [`strconv`](#strconv)
+  - [`encoding/json`](#encodingjson)
+  - [`html/template`](#htmltemplate)
+  - [`flag`](#flag)
+  - [`reflect`](#reflect)
 - [References](#references)
 
 ---
@@ -910,6 +922,8 @@ func main() {
 
 > **Important**: A lot of the functions that we use in Go, work with byte slices. That makes them much more generic and much more flexible, than if we worked with hard coded strings. For example, if you want to send a string response to a web request, you can easily convert it to a collection of bytes. If you want to send a file back, even a file is just a collection of bytes too. Thus it allows transparency to work with strings without worrying about line endings and things like that. So while, we might be working with strings in our Go programs as strings, when we start sending them to other applications, we may just be sending them as byte slices.
 
+Go is a modular language, i.e. unlike many languages, for a lot of the functionality, we have to use packages we have to import and use. Go ships with the **[`strings`](#strings-1)** package, which we can import and use for additional functions to deal with strings.
+
 ---
 
 ### Runes
@@ -1399,6 +1413,7 @@ package main
 import "fmt"
 
 func main() {
+	// Using map literal
     var timeZone = map[string]int{
         "UTC":  0*60*60,
         "EST": -5*60*60,
@@ -1408,6 +1423,14 @@ func main() {
     }
 
     fmt.Println(timeZone)           // map[CST:-21600 EST:-18000 MST:-25200 PST:-28800 UTC:0]
+
+	// Using make
+	groceries := make(map[string]float32)
+	groceries["Milk"] = 2.30
+	groceries["Fish"] = 15.25
+	groceries["Eggs"] = 1.99
+
+	fmt.Println(groceries)			// map[Eggs:1.99 Fish:15.25 Milk:2.3]
 }
 ```
 
@@ -2628,18 +2651,40 @@ func main() {
 	fmt.Println(g.name)							// Jayanta Samaddar (changed as passed as Pointer)
 }
 
-/** Receiving as a Value Receiver */
+/********************************************************************************************************************/
+// Working with Receivers
+// ----------------------
+// Note: Can only use one receiver for a method.
+// To get around duplication of methods for different receivers, declare the method types as an Interface and reuse
+// (Check the next section for Interfaces)
+/********************************************************************************************************************/
+// Receiving as a Value Receiver: Cannot mutate the original receiver object as a copy is used
 func (g greeter) greet() {
 	g.name = "Jayanta Samaddar"					// Re-assigning doesn't work outside the local scope
 	fmt.Printf("%v, %v\n", g.greeting, g.name)
 }
 
-/** Receiving as a Pointer Receiver */
+// Receiving as a Pointer Receiver: Can mutate the original receiver object as a pointer to the original is used
 func (g *greeter) welcome(surname string) {
 	g.name = "Jayanta Samaddar"					// Re-assigning modifies the outside scope
 	fmt.Printf("%v, %v\n", g.name, "you are welcome!")
 }
 ```
+
+---
+
+## Functions: `String()` method for a Custom Type
+
+If you want to control the default format for a custom type, all that's required is to define a method with the signature `String()` string on the type. For our simple type `T`, that might look like this.
+
+```go
+func (t *T) String() string {
+    return fmt.Sprintf("%d/%g/%q", t.a, t.b, t.c)
+}
+fmt.Printf("%v\n", t)
+```
+
+For a detailed example, check the [LinkedList implementation](../data-structures/datastructures/LinkedList.go)
 
 ---
 
@@ -3822,8 +3867,334 @@ func main() {
 
 ---
 
+# Directives
+
+## `go:embed`
+
+`go:embed` is a directive introduced in Go 1.16 that allows you to embed files and directories directly into your Go source code. It simplifies the process of including static assets, configuration files, or other resources as part of your Go program binary. This is especially useful for creating self-contained binaries or distributing code with embedded assets.
+
+Here's a basic overview of how `go:embed` works:
+
+1. **Embedding Files**: You can use `go:embed` to embed individual files or entire directories. For example, you can embed a single file like this:
+
+   ```go
+   //go:embed myfile.txt
+   var fileContents string
+   ```
+
+   Or, you can embed an entire directory like this:
+
+   ```go
+   //go:embed mydirectory/*
+   var dirContents string
+   ```
+
+2. **Accessing Embedded Files**: The embedded content is treated as a string or byte slice in your Go code. You can access it like any other variable. For example:
+
+   ```go
+   fmt.Println(fileContents)
+   ```
+
+3. **Build Process**: When you build your Go program, the files or directories specified with `go:embed` are included in the binary as part of the program's data section.
+
+4. **Read-Only**: The embedded content is read-only, meaning you cannot modify it at runtime. It's designed for embedding static resources.
+
+5. **Benefits**: Embedding assets in your binary simplifies deployment and distribution since you don't need to ship external files with your application. It also ensures that your program always has access to these resources, regardless of where it's executed.
+
+Here's the link to the official Go documentation that provides more details and examples of using `go:embed`:
+
+- [Embedding files in Go 1.16](https://pkg.go.dev/embed)
+
+The documentation includes usage examples and more advanced techniques for working with embedded files and directories in Go.
+
+---
+
+# [Standard Library](https://pkg.go.dev/std)
+
+Some of the Core Packages and their methods are detailed below. These are the modules that come handy with everyday usage of the language:
+
+| Package         | Description                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| `fmt`           | Formatted I/O with functions analogous to C's `printf` and `scanf`                                |
+| `log`           | Implements a simple logging package                                                               |
+| `os`            | A platform-independent interface to operating system functionality.                               |
+| `io/fs`         | Defines basic interfaces to a file system.                                                        |
+| `math`          | Provides basic constants and mathematical functions.                                              |
+| `strings`       | Implements simple functions to manipulate UTF-8 encoded strings.                                  |
+| `strconv`       | Implements conversions to and from string representations of basic data types.                    |
+| `net/http`      | Provides HTTP client and server implementations.                                                  |
+| `html/template` | Implements data-driven templates for generating HTML output safe against code injection.          |
+| `encoding/json` | Implements encoding and decoding of JSON as defined in RFC 7159.                                  |
+| `time`          | Provides functionality for measuring and displaying time.                                         |
+| `sync`          | Provides basic synchronization primitives such as mutual exclusion (Mutex) locks and Wait Groups. |
+| `flag`          | Package flag implements command-line flag parsing.                                                |
+| `reflect`       | Implements run-time reflection, allowing a program to manipulate objects with arbitrary types.    |
+| `regexp`        | Implements regular expression search.                                                             |
+
+---
+
+## [`fmt`](https://pkg.go.dev/fmt)
+
+Package `fmt` implements formatted I/O with functions analogous to C's printf and scanf. The format 'verbs' are derived from C's but are simpler.
+
+| Verbs | Description                                                                                |
+| ----- | ------------------------------------------------------------------------------------------ |
+| `%v`  | The value in a default format. When printing structs, the plus flag (%+v) adds field names |
+| `%#v` | A Go-syntax representation of the value                                                    |
+| `%T`  | A Go-syntax representation of the type of the value                                        |
+| `%%`  | A literal percent sign; consumes no value                                                  |
+| `%t`  | Boolean: The word `true` or `false`                                                        |
+| `%d`  | Integer: Base 10                                                                           |
+| `%s`  | The uninterpreted bytes of the string or slice                                             |
+| `%q`  | A double-quoted string safely escaped with Go syntax                                       |
+| `%x`  | base 16, with lower-case letters for a-f                                                   |
+| `%X`  | base 16, with upper-case letters for A-F                                                   |
+
+More can be find on the [Documentation Page for `fmt`](https://pkg.go.dev/fmt)
+
+**Methods**:
+
+| Method        | Function                                                      |
+| ------------- | ------------------------------------------------------------- |
+| `fmt.Printf`  | Prints a formatted string to the console                      |
+| `fmt.Println` | Prints a new line                                             |
+| `fmt.Sprintf` | Returns a formatted string (doesn't print)                    |
+| `fmt.Errorf`  | Use formatting features to create descriptive error messages. |
+
+**Example 1**: Basic Printing
+
+```go
+package main
+
+import "fmt"
+
+type CustomMap[T comparable, V int | string] map[T]V
+
+func main() {
+	user := make(CustomMap[string, int])
+	user["id"] = 123456
+	user["age"] = 32
+	fmt.Println(user)				// map[id:123456]
+	fmt.Printf("The user's ID is: %v\n", user["id"]) // The user's ID is: 123456
+	fmt.Printf("The user's age is: %d\n", user["age"]) // The user's age is: 32
+
+	sprintfResult := fmt.Sprintf("The User: ID = %s, Age = %d\n", user["id"], user["age"])
+	fmt.Println(sprintfResult) // The User: ID = 123456, Age = 32
+
+	printError()
+}
+
+func printError() {
+	const name, id = "bueller", 17
+	err := fmt.Errorf("user %q (id %d) not found", name, id)
+	fmt.Println(err.Error())
+}
+```
+
+---
+
+## `log`
+
+Check **[`log.go`](std/log.go)** for examples.
+
+---
+
+## `strings`
+
+Check **[`StringOperations.go`](std/StringOperations.go)** for examples.
+
+---
+
+## `strconv`
+
+Check **[`StringConversions.go`](std/StringConversions.go)** for examples.
+
+---
+
+## `encoding/json`
+
+**Use Cases**: Encoding a struct into JSON is often needed for sending back JSON response or storing a Log struct as JSON string.
+
+```go
+package log
+
+import (
+	"encoding/json"
+)
+
+type user struct{
+	Name string `json:"name"`
+	Age int8 `json:"age"`
+	IsActive bool `json:"is_active"`
+}
+
+func JSONOperations() {
+	/********************************************************************************************************************/
+	// JSON Encoding: Marshal
+	// JavaScript equivalent of: JSON.stringify
+	/********************************************************************************************************************/
+	var c customer = customer{
+		Name:     "Jayanta Samaddar",
+		Age:      32,
+		IsActive: true,
+	}
+	bytes, err := json.Marshal(&c)
+	if err != nil {
+		log.Fatalln(err.Error())
+	} else {
+		fmt.Printf("Value: %v, Type: %T\n", string(bytes), string(bytes))
+	}
+
+	/********************************************************************************************************************/
+	// JSON Decoding: Unmarshal. Inverse of Marshal
+	// JavaScript equivalent of: JSON.parse
+	/********************************************************************************************************************/
+	var c2 customer
+	err = json.Unmarshal(bytes, &c2)
+	if err != nil {
+		log.Fatalln(err.Error())
+	} else {
+		c2.IsActive = false
+		// New c2 with changes
+		fmt.Printf("Value: %v, Type: %T\n", c2, c2)
+
+		// Original
+		fmt.Printf("Value: %v, Type: %T\n", c, c)
+	}
+}
+```
+
+---
+
+## `html/template`
+
+The `html/template` package in Go provides a template engine for generating HTML and other text-based formats. It allows you to define templates with placeholders that you can fill with dynamic data when rendering. Here's an example of using the `html/template` package along with explanations:
+
+1. **Import the "html/template" package**:
+
+   ```go
+   import (
+       "html/template"
+       "os"
+   )
+   ```
+
+2. **Define a template**:
+
+   Create a template string with placeholders enclosed in double curly braces `{{ }}`. These placeholders will be replaced with dynamic data when rendering the template.
+
+   ```go
+   const tmpl = `
+   <!DOCTYPE html>
+   <html>
+   <head>
+       <title>{{ .Title }}</title>
+   </head>
+   <body>
+       <h1>{{ .Heading }}</h1>
+       <p>{{ .Content }}</p>
+   </body>
+   </html>
+   `
+   ```
+
+   If saving HTML templates as files to a directory, do have the files saved with the `.gohtml` extension and if you are using VS Code, use an extension that can syntax highlight the code. An example for such an extension is [Gotemplate Syntax by casualjim](https://marketplace.visualstudio.com/items?itemName=casualjim.gotemplate)
+
+   You can also access the values of a Map, if they are passed as data to the `Execute` method like this:
+
+   ```go
+   const tmpl = `
+   <!DOCTYPE html>
+   <html>
+   <head>
+       <title>{{ .Data "Title" }}</title>
+   </head>
+   <body>
+       <h1>{{ .Data "Heading" }}</h1>
+       <p>{{ .Data "Content" }}</p>
+   </body>
+   </html>
+   `
+   ```
+
+3. **Parse the template**:
+
+   Use `template.New` to create a new template, and then use the `Parse` method to parse the template string.
+
+   ```go
+   t, err := template.New("example").Parse(tmpl)
+   if err != nil {
+       panic(err)
+   }
+   ```
+
+4. **Prepare data**:
+
+   Create a data structure (usually a Go struct) to hold the dynamic data that will be inserted into the template.
+
+   ```go
+   data := struct {
+       Title   string
+       Heading string
+       Content string
+   }{
+       Title:   "Sample Page",
+       Heading: "Welcome to Go Templates",
+       Content: "This is an example of using Go's HTML templates.",
+   }
+   ```
+
+5. **Execute the template**:
+
+   Use the `Execute` method of the parsed template to fill in the placeholders with the data and write the result to an output stream (e.g., an HTTP response or a file).
+
+   ```go
+   err = t.Execute(os.Stdout, data)
+   if err != nil {
+       panic(err)
+   }
+   ```
+
+   In this example, we're writing the rendered template to the standard output (`os.Stdout`), but you can use any `io.Writer` interface, such as an HTTP response writer or a file writer, depending on your use case.
+
+6. **Output**:
+
+   Running the code above will produce the following HTML output:
+
+   ```html
+   <!DOCTYPE html>
+   <html>
+     <head>
+       <title>Sample Page</title>
+     </head>
+     <body>
+       <h1>Welcome to Go Templates</h1>
+       <p>This is an example of using Go's HTML templates.</p>
+     </body>
+   </html>
+   ```
+
+This is a basic example of using the "html/template" package to create and render an HTML template. You can create more complex templates with loops, conditionals, and custom functions to generate dynamic content for your web applications.
+
+---
+
+## `flag`
+
+Package flag implements command-line flag parsing.
+
+Check **[flag.go](std/flag.go)** for example usage.
+
+---
+
+## `reflect`
+
+Reflection in metaprogramming refers to an object's ability to introspect on itself and even modify itself.
+
+Check **[`ReflectionOperations.go`](std/ReflectionOperations.go)** for examples.
+
+---
+
 # References
 
-- [Golang Tutorial - Freecodecamp]()
 - [Effective Go](https://go.dev/doc/effective_go)
 - [Go 1.18 : Generics in Go](https://www.youtube.com/watch?v=WpTKqnfp5dY)

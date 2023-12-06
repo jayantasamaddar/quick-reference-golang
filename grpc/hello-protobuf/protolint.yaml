@@ -1,0 +1,15 @@
+# Lint directives.
+lint:
+  # Linter rules.
+  # Run `pl list` to see all available rules.
+  rules:
+    # The specific linters to remove.
+    remove:
+      - ENUM_FIELD_NAMES_UPPER_SNAKE_CASE
+
+  # Linter rules option.
+  rules_option:
+    # INDENT rule option.
+    indent:
+      # Available styles are 4(4-spaces), 2(2-spaces) or tab.
+      style: 2

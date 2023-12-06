@@ -1,7 +1,20 @@
-go 1.20
+go 1.21.2
 
 use (
-    ./golang/src/github.com/jayantasamaddar/quick-reference-golang
-    ./basic-CRUD-api
-    ./cli-reminder
+	./design-patterns/01-single-responsibility-principle
+	./design-patterns/02-open-closed-principle
+	./design-patterns/03-liskovs-substitution-principle
+	./design-patterns/04-interface-segregation-principle
+	./design-patterns/05-dependency-inversion-principle
+	./design-patterns/06-builder-pattern
+	./golang
+	./data-structures
+	./examples/cli-reminder
+	./examples/basic-http-server
+	./examples/basic-smtp-server
+	./examples/mux-CRUD-api
+	./examples/mongo-CRUD-api
+	./examples/postgres-CRUD-api
+	./examples/echo-CRUD-api
+	./demos/saas-app-demo
 )
