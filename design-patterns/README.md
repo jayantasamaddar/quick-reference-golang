@@ -21,5 +21,7 @@
 Design Patterns refer to Design Patterns introduced by Robert C. Martin, also known as Uncle Bob.
 
 1. [Builder Pattern](./06-builder-pattern/)
+2. [Factory Pattern](./07-factory-pattern/)
+3. [Prototype Pattern](./08-prototype-pattern/)
 
 ---

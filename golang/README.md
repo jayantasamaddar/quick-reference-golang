@@ -101,6 +101,12 @@
   - [Interfaces: Implementation](#interfaces-implementation)
   - [Interfaces: Best Practices](#interfaces-best-practices)
 - [Goroutines](#goroutines)
+  - [Goroutines: Fundamentals - Processes and Threads](#goroutines-fundamentals---processes-and-threads)
+  - [Goroutines: Green Threads](#goroutines-green-threads)
+    - [Context Switching](#context-switching)
+    - [Traditional Threads vs Green Threads](#traditional-threads-vs-green-threads)
+  - [Goroutines: Threads in Go and Goroutines](#goroutines-threads-in-go-and-goroutines)
+  - [Goroutines: Deep Dive - How Go Multiplexes Goroutines (Green Threads) onto Operating System Threads](#goroutines-deep-dive---how-go-multiplexes-goroutines-green-threads-onto-operating-system-threads)
   - [Goroutines: Creation](#goroutines-creation)
   - [Goroutines: Race Conditions when working with Goroutines and Closures](#goroutines-race-conditions-when-working-with-goroutines-and-closures)
   - [Goroutines: Synchronization](#goroutines-synchronization)
@@ -403,7 +409,7 @@ func main() {
 **Running the Go application can be done in three ways**:
 
 1. `go run [path]`
-2. `go build [modulePath]` and then running the executable `./name`
+2. `go build [modulePath]` and then running the executable `./name`. With the environment variable `CGO_ENABLED=0` you get a statically-linked binary (see: [Static build](https://en.wikipedia.org/wiki/Static_build)) so it will run without any external dependencies (you can buld your docker image `from SCRATCH`)
 3. `go install [moduePath]` and then accessing it via the bin directory like `GOPATH/bin/name`
 
 ---
@@ -2893,6 +2899,139 @@ When working with Interfaces there are some rules and guidelines to keep in mind
 # Goroutines
 
 Concurrency is the ability of an application to handle multiple tasks which start, run, and complete in overlapping time periods, in no specific order.
+
+## Goroutines: Fundamentals - Processes and Threads
+
+1. **Processes**: In the context of operating systems, a process is an independent program with its own memory space, resources, and execution environment.
+   Each Go program runs as a separate process. Multiple instances of a Go program can run concurrently as separate processes on a machine.
+   Processes are isolated from each other, and communication between them often involves inter-process communication (IPC) mechanisms.
+   E.g. Notepad can be run as two difference instances of the same program, i.e. two processes - They do not share memory space, resources and execution environment, i.e. have isolation from each other. Thus, if one process by any chance crashes, the other will be unaffected.
+   The disadvantage of processes is that, they can be heavyweight as they need their own memory space and other resources and takes a longer time to start.
+
+   An application can also contain multiple processes within itself. We might know of a function called `fork` in C or C++ which spawns a new process programatically. As soon as `fork` is called, the entire memory space and program counter is copied into a separate process called a child process. These two processes (parent and child process) now continue with their own individual lifecycles.
+
+   When using processes to solve a problem, we would break a problem into multiple parts and have each process solve a particular segment of the problem and then stitch it all up in the end. There is not a lot of communication between the processes. In Go, the support for creating and using processes isn't that great and is provided by the `os/exec` package, and it is relatively high-level and convenient compared to C or C++. In fact, Go does not have direct equivalents to the `fork` and `spawn` functions found in languages like C or even Node.js.
+
+2. **Threads**: Threads are smaller units of execution within a process. A process can have multiple threads, and these threads share the same memory space and resources.
+   Traditionally, operating systems manage threads, and threads within the same process can communicate with each other using shared memory.
+
+   When using threads to solve a problem, we would solve the problem directly with all the threads involved in solving it. Thus, this requires communication between threads for efficiency.
+
+   In Go, the language runtime manages its own internal threads or green threads (called goroutines). Developers typically work with goroutines rather than directly managing threads.
+
+---
+
+## Goroutines: Green Threads
+
+A green thread is a more efficient version of a thread.
+To understand why it is more efficient, we need to understand traditional Operating system threads and to understand why we need to make traditional threads faster, we need to understand an Operating System concept called Context Switching.
+
+### Context Switching
+
+**Context switching** is a process performed by the operating system's scheduler to switch the execution context from one thread or process to another. It involves saving the current state of a thread or process (its context) and restoring the saved state of another thread or process so that it can resume execution.
+
+The context of a thread or process includes information such as the contents of the CPU registers, the program counter (the address of the next instruction to be executed), the stack pointer (indicating the current position in the program's call stack), and other relevant information needed for the thread or process to continue its execution.
+
+Here are the key steps involved in a context switch:
+
+1. **Save Context:** The operating system saves the context of the currently running thread or process. This involves storing the values of CPU registers, the program counter, and other necessary information into a data structure known as the process control block (PCB).
+
+2. **Load Context:** The operating system selects the next thread or process to run and loads its context from its PCB. This involves restoring the values of CPU registers, the program counter, and other relevant information.
+
+3. **Switch to User Mode:** If the context switch involves switching between user mode and kernel mode, the operating system switches to the user mode to allow the selected thread or process to execute.
+
+4. **Resume Execution:** The selected thread or process now resumes execution from the point where it was previously interrupted. The program counter is set to the next instruction to be executed, and the CPU begins executing instructions for the newly scheduled thread or process.
+
+Context switching is a fundamental operation in multitasking and multiprocessing environments, where multiple threads or processes share a single CPU. It allows the operating system to provide the illusion of concurrent execution by rapidly switching between different threads or processes, giving the appearance that they are running simultaneously. Efficient context switching is crucial for maintaining system responsiveness and supporting concurrent execution of multiple tasks.
+
+> **Context switch overhead** refers to the cost associated with performing a context switch between two threads or processes in a multitasking or multiprocessing system. The overhead arises from the time and resources required to save the state of the currently running thread or process, load the state of another thread or process, and perform any necessary operations associated with the context switch.
+>
+> The context switch overhead is generally considered undesirable, as it can impact system performance and responsiveness. Reducing context switch overhead is a goal in the design and optimization of operating systems and scheduling algorithms. Techniques such as prioritized scheduling, preemption control, and minimizing memory operations help mitigate context switch overhead and improve overall system efficiency.
+
+A green thread aims to improve the efficiency of traditional threads by reducing this context switch overhead. When there are thousands of threads running, the operating system spends a lot of time doing context switching and lot less time doing useful execution. Green threads aren't something new that was invented recently. The correct technical term for green threads are **"user level threads"**.
+
+---
+
+### Traditional Threads vs Green Threads
+
+There are two types of threads:
+
+1. **Operating System Threads**: Operating system threads, also known as **kernel-level threads**, are managed by the operating system's kernel. Each thread is represented and scheduled by the operating system, and the kernel is responsible for saving and restoring the thread's context during context switches.
+
+   - **Isolation and Resources**: OS threads have their own stack and register set, providing strong isolation between threads. They can run concurrently and independently of each other. Resources such as file descriptors, open files, and memory space are typically isolated between threads.
+   - **System Calls**: Blocking operations, such as I/O operations, often result in the entire thread being blocked. The operating system scheduler can switch to another thread during such blocking calls.
+   - **Kernel Synchronization**: The kernel is responsible for thread synchronization, and synchronization mechanisms like mutexes and semaphores are commonly used to coordinate access to shared resources.
+
+2. **Green Threads**: Green threads, also known as **user-level threads** or fibers, are managed entirely by a runtime or a user-level library. They are not directly associated with the operating system kernel. Green threads operate in user space, and the runtime or library (program) is responsible for scheduling and context switching between threads. A green thread typically runs inside a kernel-level thread and typically many green threads are running inside one kernel-level thread. Using this strategy the kernel doesn't need to get involved to do the context switching, instead it is the program that can decide what to execute. Thus green threads are faster when handling context-switching, especially in scenarios with a large number of concurrent tasks (thousands of green threads).
+
+   - **Lightweight**: Green threads are typically lightweight compared to OS threads. They share the same stack and heap, and context switches between green threads involve saving and restoring a smaller set of user-level state.
+   - **Cooperative Scheduling**: Green threads often operate under cooperative scheduling. Each thread voluntarily yields control to the scheduler at certain points, allowing other threads to run. Cooperative scheduling is often managed by language runtimes (e.g., **Go**, Python, Java) or user-level libraries.
+   - **Reduced Kernel Involvement**: Since green threads are managed entirely in user space, there is no need for the operating system to be aware of them. Context switches between green threads do not involve the kernel. This can be beneficial in scenarios where fine-grained control over concurrency is required.
+   - **Avoid Kernel Locks**: Green threads may avoid contention for kernel locks associated with traditional context switches. This can be advantageous in scenarios with high concurrency, where contention for kernel resources can be a limiting factor.
+
+**Differences between Operating System Threads and Green Threads**:
+
+<!--prettier-ignore-->
+| Comparison              | Operating System Threads                                                                           | Green Threads |
+| ----------------------- | -------------------------------------------------------------------------------------------------- | ------------- |
+| **Concurrency Model**   | OS threads provide true parallelism, as they can run concurrently on multiple processors or cores. | Green threads are often used to achieve concurrency and parallelism in a user-level fashion, but they may not take full advantage of multiple cores unless the runtime or library provides some form of parallelism (e.g., goroutines in Go).              |
+| **Resource Usage**      | OS threads tend to have higher resource overhead due to separate stacks and registers for each thread. | Green threads have lower resource overhead as they share the same stack and heap, but they may be limited by the available resources of a single OS thread. |
+| **Synchronization**     | OS threads use kernel-level synchronization mechanisms. | Green threads often rely on user-level synchronization mechanisms, which can be more lightweight but may lack some of the guarantees provided by kernel-level synchronization. |
+| **Blocking Operations** | OS threads can block independently, potentially allowing other threads to continue execution. | Green threads may need to be explicitly designed for cooperative scheduling to avoid blocking the entire runtime. |
+
+---
+
+## Goroutines: Threads in Go and Goroutines
+
+Go uses a hybrid system of kernel-level threads and green threads. It creates a kernel-level thread for each CPU available and each one of these threads contains a number of the green threads. Whenever a green thread tries in Go tries to do a synchronous operation where we have to wait for I/O and the whole thread is removed from execution, Go reshuffles those green threads that are not doing any I/O work or waiting on any operation to other available kernel-level threads that are still running on the CPU. This way, it tries to avoid the slow kernel-level context switching and improve the problem of waiting on I/O from a single green thread.
+
+From a Go developer's perspective, the key takeaway is that Go abstracts away many of the complexities associated with traditional threading. Developers can focus on writing concurrent code using goroutines without worrying about low-level thread management. This makes it easier to write scalable and concurrent programs in Go. The Go runtime scheduler efficiently handles the execution and coordination of goroutines, making concurrent programming in Go more accessible and less error-prone compared to traditional thread-based approaches.
+
+Goroutines are a concurrency primitive in Go, and they are sometimes referred to as "green threads" or "lightweight threads." Goroutines are managed by the Go runtime, and they are much lighter than traditional threads. Many goroutines can run concurrently within a single operating system thread. Goroutines are created using the `go` keyword, and they are functions that can be executed concurrently with other goroutines. The Go runtime scheduler multiplexes goroutines onto operating system threads, providing efficient concurrency without the need for manual thread management by developers.
+
+---
+
+## Goroutines: Deep Dive - How Go Multiplexes Goroutines (Green Threads) onto Operating System Threads
+
+In Go, the multiplexing of green threads (goroutines) onto OS threads is handled by the Go runtime scheduler. The scheduler is an integral part of the Go runtime, and its primary responsibility is to manage the execution of goroutines on the available OS threads.
+
+Here are the key aspects of how Go accomplishes the multiplexing:
+
+1. **Goroutine Scheduling:**
+
+   - When a new goroutine is created using the `go` keyword, it is scheduled to run by the Go runtime scheduler.
+   - The scheduler decides when to start, pause, or resume the execution of goroutines. This scheduling is done cooperatively, meaning that goroutines voluntarily yield control to the scheduler during certain points in their execution.
+
+2. **OS Thread Pool:**
+
+   - Go runtime maintains a pool of OS threads, also known as the "M" (machine) pool. These OS threads are managed by the runtime and are used to execute goroutines.
+   - The number of OS threads in the pool is dynamic and can be adjusted based on the workload and system characteristics.
+
+3. **G-M-P Model:**
+
+   - The scheduling model in Go is often referred to as the G-M-P model, where:
+     - **G (Goroutine):** Represents a goroutine.
+     - **M (Machine):** Represents an OS thread (machine).
+     - **P (Processor):** Represents a context that holds resources needed for scheduling (e.g., a local queue of goroutines).
+   - The scheduler maps goroutines (G) onto OS threads (M) and manages the distribution of goroutines among the available OS threads.
+
+4. **Global Run Queue and Local Queues:**
+
+   - There is a global run queue that contains all runnable goroutines. The scheduler picks goroutines from this global queue and assigns them to available OS threads.
+   - Each OS thread (M) also has a local queue of goroutines. This local queue helps minimize contention and allows for efficient scheduling.
+
+5. **Work Stealing:**
+
+   - The scheduler uses work-stealing techniques to balance the load across all available OS threads. If one OS thread has fewer tasks to execute, it may steal tasks from the local queue of another OS thread.
+   - This helps in achieving better utilization of resources and load balancing.
+
+6. **System Calls and Blocking Operations:**
+   - When a goroutine makes a system call or blocks on an operation (e.g., I/O), the scheduler can use this opportunity to schedule other runnable goroutines on the same OS thread.
+   - The scheduler is designed to efficiently handle blocking operations without blocking the entire OS thread.
+
+By managing the scheduling of goroutines and coordinating their execution across OS threads, the Go runtime provides a high-level concurrency model that is both efficient and easy for developers to work with. The scheduling decisions made by the runtime contribute to Go's ability to handle large numbers of concurrent tasks with relatively low overhead.
+
+---
 
 ## Goroutines: Creation
 

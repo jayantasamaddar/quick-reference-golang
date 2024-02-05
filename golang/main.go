@@ -1,6 +1,6 @@
 package main
 
-import "github.com/jayantasamaddar/quick-reference-golang/std"
+import "github.com/jayantasamaddar/quick-reference-golang/golang/std"
 
 type CustomMap[T comparable, V int | string] map[T]V
 
@@ -19,7 +19,7 @@ func main() {
 	// std.SliceOperationsDemo()
 
 	// Reflection Operations Demo
-	// std.ReflectionOperationsDemo()
+	std.ReflectionOperationsDemo()
 
 	// JSON Encoding and Decoding Demo
 	// std.JSONOperationsDemo()
@@ -31,5 +31,5 @@ func main() {
 	// std.LogOperationsDemo()
 
 	// HTML Template Demo
-	std.HTMLTemplatesDemo()
+	// std.HTMLTemplatesDemo()
 }

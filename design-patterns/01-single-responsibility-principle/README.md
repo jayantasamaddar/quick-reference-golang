@@ -1,12 +1,35 @@
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Single Responsibility Principle](#single-responsibility-principle)
+- [Examples](#examples)
+  - [Example 1: Journal Entry](#example-1-journal-entry)
+- [Summary](#summary)
+
+---
+
 # Single Responsibility Principle
 
 The Single Responsibility Principle states that a function should have a single primary responsibility and have only one reason to change, that reason being related to its primary responsibility.
 
-The anti-pattern for Single Responsibility Principle is the God Object. A God Object is when you take everything inside a single package. Thus, there need to be a separation of concerns.
+The anti-pattern for Single Responsibility Principle is the God Object. A God Object is when you take everything inside a single package. Thus, there needs to be a separation of concerns.
 
-**Example**: Below is given an example of how we would implement a Journal where one can `AddEntry` or `RemoveEntry`. There are also two other functions `Count` and `String` to display the number of entries and stringify the entries with a separator, respectively. However, Persistence is a separate concern and we will create the Separation of Concerns, thereby implementing the Single Responsibility Principle.
+---
 
-In `lib/Journal.go`
+# Examples
+
+## Example 1: Journal Entry
+
+**Description**: Implement a program where we can add or remove a journal entry and also persist the journal to disk.
+
+**Implementation**: There are clearly two separate concerns/responsibilities defined by two structs:
+
+- **`Journal`**: Adding and Removing an Entry to the Journal. There can be other methods like `Count` and `String` to display the number of entries and stringify the entries with a separator, respectively.
+- **`Persistence`**: Persistence to a file on the disk (Saving the Journal)
+
+Thus, by separation of concerns we thereby implement the Single Responsibility Principle. We will pack these structs in the `lib` package for convenience.
+
+In **`lib/Journal.go`**
 
 ```go
 package lib
@@ -55,7 +78,7 @@ func (j *Journal) String(sep string) string {
 }
 ```
 
-In `lib/Persistence.go`
+In **`lib/Persistence.go`**
 
 ```go
 package lib
@@ -84,7 +107,7 @@ func (p *Persistence) SaveToFile(j *Journal, filename string) {
 
 ```
 
-In `main.go`
+In **`main.go`**
 
 ```go
 package main
@@ -126,6 +149,10 @@ func main() {
 	log.Println("Persisted to file")
 }
 ```
+
+---
+
+# Summary
 
 Thus we have clear separation of concerns:
 

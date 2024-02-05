@@ -3,50 +3,15 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/jayantasamaddar/quick-reference-golang/design-patterns/06-builder-pattern/lib"
 )
 
-const (
-	indentSize = 2
-)
-
-type HTMLElement struct {
-	name, text string
-	elements   []HTMLElement
-}
-
-func (e *HTMLElement) String() string {
-	return e.string(0)
-}
-
-func (e *HTMLElement) string(indent int) string {
-	sb := strings.Builder{}
-	i := strings.Repeat(" ", indentSize*indent)
-	sb.WriteString(fmt.Sprintf("%s<%s>\n", i, e.name))
-
-	if len(e.text) > 0 {
-		sb.WriteString(strings.Repeat(" ", indentSize*(indent+1)))
-	}
-	sb.WriteString(e.text)
-	sb.WriteString("\n")
-
-	for _, el := range e.elements {
-		sb.WriteString(el.string(indent + 1))
-	}
-	sb.WriteString(fmt.Sprintf("%s</%s>\n", i, e.name))
-
-	return sb.String()
-}
-
-type HTMLBuilder struct {
-	rootName string
-	root     HTMLElement
-}
-
-func NewHTMLBuilder(rootName string) *HTMLBuilder {
-	return &HTMLBuilder{rootName, HTMLElement{rootName, "", []HTMLElement{}}}
-}
-
+/*********************************************************************************************************/
+// Main Function
+/*********************************************************************************************************/
 func main() {
+	// (1) Demonstration of `strings` builder
 	hello := "Hello World!"
 	sb := strings.Builder{}
 	sb.WriteString("<p>")
@@ -66,4 +31,32 @@ func main() {
 	sb.WriteString("</ul>")
 	fmt.Println(sb.String())
 	sb.Reset()
+
+	// (2a) Demonstration of HTMLBuilder
+	b := lib.NewHTMLBuilder("ul")
+	fruits := []string{"Apple", "Banana", "Mango"}
+	for _, v := range fruits {
+		b.AddChild("li", v)
+	}
+	fmt.Println(b.String())
+
+	// (2b) Demonstration of HTMLBuilder with Fluent Interface (AddChildFluent)
+	b.Clear()
+	b.AddChildFluent("li", "One").AddChildFluent("li", "Two").AddChildFluent("li", "Three")
+	fmt.Println(b.String())
+
+	// (3) Demonstration of Builder Facets
+	pb := lib.NewPersonBuilder("Sherlock Holmes")
+	pb.Lives().At("221B Baker Street").In("London").Zip("NW16XE").Works().At("Science of Deduction").Designation("Private Investigator").AnnualIncome(200000)
+
+	fmt.Println(pb.Build()) // &{Sherlock Holmes 221B Baker Street London NW16XE Science of Deduction Private Investigator 200000}
+
+	// (4) Demonstration of Builder Parameters
+	lib.SendEmail(func(b *lib.EmailBuilder) {
+		b.From("foo@bar.com").To("bar@baz.com").Subject("Meeting!").Body("Hello do you want to meet?")
+	})
+
+	// (5) Demonstration of Functional Builder
+	cb := lib.CountryBuilder{}
+	fmt.Println(cb.Name("India").Currency("INR").Build()) // &{India INR}
 }

@@ -1,4 +1,4 @@
-go 1.21.2
+go 1.21.6
 
 use (
 	./design-patterns/01-single-responsibility-principle
@@ -7,6 +7,12 @@ use (
 	./design-patterns/04-interface-segregation-principle
 	./design-patterns/05-dependency-inversion-principle
 	./design-patterns/06-builder-pattern
+	./design-patterns/07-factory-pattern
+	./design-patterns/08-prototype-pattern
+	./design-patterns/09-singleton-pattern
+	./design-patterns/10-adapter-pattern
+	./design-patterns/11-bridge-pattern
+	./design-patterns/12-composite-pattern
 	./golang
 	./data-structures
 	./examples/cli-reminder

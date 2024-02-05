@@ -1,4 +1,11 @@
-## Liskov's Substitution Principle
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Liskov's Substitution Principle](#liskovs-substitution-principle)
+
+---
+
+# Liskov's Substitution Principle
 
 The Liskov's Substitution Principle states that if you have some API that takes a base class and works correctly with the base class, it should also work correctly with the derived class.
 

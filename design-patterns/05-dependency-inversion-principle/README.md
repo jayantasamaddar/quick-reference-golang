@@ -1,3 +1,11 @@
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Dependency Inversion Principle](#dependency-inversion-principle)
+- [Summary](#summary)
+
+---
+
 # Dependency Inversion Principle
 
 The Dependency Inversion Principle states that High-level modules should not depend on Low-level modules and both of them should depend on abstractions (in Go, that would mean interfaces).
@@ -81,4 +89,8 @@ func main() {
 }
 ```
 
-The above implementation has been correctly done with **Dependency Inversion Principle**. We are now protected against changes now. For example, if we were to change the storage mechanism of relations from a slice to something more sophisticated, we would only be modifying the methods of `Relationships`. We would not be modifying for example, the methods of `Research`, because it doesn't depend on the low-level detail.
+---
+
+# Summary
+
+The above implementation has been correctly done with **Dependency Inversion Principle**. We are protected against changes now. For example, if we were to change the storage mechanism of relations from a slice to something more sophisticated, we would only be modifying the methods of `Relationships`. We would not be modifying for example, the methods of `Research`, because it doesn't depend on the low-level detail.
