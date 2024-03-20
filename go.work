@@ -1,4 +1,4 @@
-go 1.21.6
+go 1.22.0
 
 use (
 	./design-patterns/01-single-responsibility-principle
@@ -13,8 +13,17 @@ use (
 	./design-patterns/10-adapter-pattern
 	./design-patterns/11-bridge-pattern
 	./design-patterns/12-composite-pattern
+	./design-patterns/13-decorator-pattern
+	./design-patterns/14-facade-pattern
+	./design-patterns/20-iterator-pattern
+	./design-patterns/21-mediator-pattern
+	./design-patterns/23-observer-pattern
+	./design-patterns/24-state-pattern
+	./design-patterns/25-strategy-pattern
+	./design-patterns/27-visitor-pattern
 	./golang
 	./data-structures
+	./algorithms/leetcode
 	./examples/cli-reminder
 	./examples/basic-http-server
 	./examples/basic-smtp-server
@@ -23,4 +32,5 @@ use (
 	./examples/postgres-CRUD-api
 	./examples/echo-CRUD-api
 	./demos/saas-app-demo
+	./demos/subscription-service
 )

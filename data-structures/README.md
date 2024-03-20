@@ -64,7 +64,9 @@ These are just some of the many data structures available in computer science. T
 
 ---
 
-## The Implementation
+## Implementation in Go
 
 - The implementation uses Generics introduced in Go 1.18. Go being a statically typed language, this allows one to easily plugin additional types as desired.
 - The core language has been used as much as possible without packages.
+
+---

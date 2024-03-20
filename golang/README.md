@@ -218,14 +218,24 @@ Strongly typed means, the type of a variable cannot change over time. Statically
 4. Edit `settings.json` in VS Code and add the following:
 
    ```json
-   "[go]": {
-   	"editor.defaultFormatter": "golang.go",
-   	"editor.formatOnSave": true
-   },
-   "go.useLanguageServer": true,
-   "go.languageServerFlags": ["-rpc.trace"],
-   "gopls": {
-   	"verboseOutput": true
+   {
+     "[go]": {
+       "editor.defaultFormatter": "golang.go",
+       "editor.formatOnSave": true
+     },
+     "go.useLanguageServer": true,
+     "go.languageServerFlags": ["-rpc.trace"],
+     "gopls": {
+       "verboseOutput": true
+     },
+     "files.associations": {
+       "*.gohtml": "html",
+       "*.tmpl": "html"
+     },
+     // If VSCode is not able to find Go, you can provide the path explicitly like so
+     "go.alternateTools": {
+       "go": "/opt/homebrew/bin/go"
+     }
    }
    ```
 
@@ -3091,6 +3101,8 @@ func sayHello() {
 	fmt.Println("Hello")
 }
 ```
+
+> **Note**: When the main function exits, all existing goroutines die. Be careful of any timers or abrupt ending to the main function that may kill goroutines prematurely.
 
 ---
 

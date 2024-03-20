@@ -24,8 +24,9 @@ type Type interface {
 	Number | Complex | ~string | ~rune
 }
 
-// Can apply to Queues and Stacks that use and underlying Slice. Any Slice based linear data structure you build may also implement this.
-type SlicekMethods[T Type] interface {
+// Can apply to Queues and Stacks that use and underlying Slice.
+// Any other Slice or LinkedList based linear data structure you build may also implement this.
+type ListMethods[T Type] interface {
 	Get(index int) T
 	Set(index int, value T)
 	Size() int
@@ -38,4 +39,10 @@ type SlicekMethods[T Type] interface {
 	Every(callback func(index int, value T) bool) bool
 	Join(sep string) string
 	String() string
+}
+
+type Iterator[T Type] interface {
+	HasNext() bool
+	Next() T
+	Reset()
 }

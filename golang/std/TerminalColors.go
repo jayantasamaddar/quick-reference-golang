@@ -1,5 +1,10 @@
 package std
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Terminal Colours
 const (
 	Reset  = "\033[0m"
@@ -13,6 +18,12 @@ const (
 	White  = "\033[97m"
 )
 
-func PrintC(color string, s string) string {
-	return color + s + Reset
+func PrintC(color string, strs ...string) string {
+	return color + strings.Join(strs, " ") + Reset
+}
+
+func PrintHeader(s string) {
+	fmt.Println(Purple + "-------------------------------------------------------------------------------------------------" + Reset)
+	fmt.Println(Purple + "\t" + s + Reset)
+	fmt.Println(Purple + "-------------------------------------------------------------------------------------------------" + Reset)
 }

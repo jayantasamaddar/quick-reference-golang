@@ -1,7 +1,5 @@
 package main
 
-import "github.com/jayantasamaddar/quick-reference-golang/golang/std"
-
 type CustomMap[T comparable, V int | string] map[T]V
 
 func main() {
@@ -19,7 +17,7 @@ func main() {
 	// std.SliceOperationsDemo()
 
 	// Reflection Operations Demo
-	std.ReflectionOperationsDemo()
+	// std.ReflectionOperationsDemo()
 
 	// JSON Encoding and Decoding Demo
 	// std.JSONOperationsDemo()
@@ -32,4 +30,28 @@ func main() {
 
 	// HTML Template Demo
 	// std.HTMLTemplatesDemo()
+
+	/********************************************************************/
+	// Concurrency
+	/********************************************************************/
+	// Concurrency Demo
+	// concurrency.WaitGroups()
+
+	// Channels Demo
+	// channels.ChannelsDemo()
+	// channels.ChannelSelectDemo()
+	// channels.ChannelBufferedDemo()
+
+	// Mutex Demo
+	// concurrency.MutexDemo()
+
+	// Pizzeria: Producer-Consumer Demo
+	// pc.PizzeriaProducerConsumerProblem()
+
+	// Dining Philosopher's Problem
+	// df.DiningPhilosopher()
+
+	// Sleeping Barber Problem
+	// sb.SleepingBarber()
+	// slb.SleepingBarberProblem()
 }
